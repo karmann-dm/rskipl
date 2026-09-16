@@ -1,6 +1,6 @@
 [package]
 name = "rskipl"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Zero-dependency arena-backed lock-free MVCC skiplist implementation in Rust"
 repository = "https://github.com/karmann-dm/rskipl"
