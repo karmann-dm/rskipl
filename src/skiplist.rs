@@ -8,7 +8,7 @@
 //! +20 key_len  u32 immutable after publish
 //! +24 tower    [AtomicU32; height] only height slots are allocated
 
-use std::cmp::{self, Ordering as CmpOrdering};
+use std::cmp::Ordering as CmpOrdering;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use crate::arena::{Arena, ArenaFull, NULL};
@@ -41,6 +41,7 @@ impl From<ArenaFull> for Error {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub struct Entry<'a> {
     pub key: &'a [u8],
@@ -73,6 +74,7 @@ pub struct SkipList {
 unsafe impl Send for SkipList {}
 unsafe impl Sync for SkipList {}
 
+#[allow(dead_code)]
 impl SkipList {
     pub fn new(capacity: u32) -> Result<Self, Error> {
         let arena = Arena::new(capacity);
@@ -88,37 +90,37 @@ impl SkipList {
 
     #[inline]
     unsafe fn version_of(&self, node: u32) -> u64 {
-        (self.arena.ptr_at(node + OFF_VERSION) as *const u64).read()
+        unsafe { (self.arena.ptr_at(node + OFF_VERSION) as *const u64).read() }
     }
 
     #[inline]
     unsafe fn value_cell(&self, node: u32) -> &AtomicU64 {
-        let p = self.arena.ptr_at(node + OFF_VALUE);
-        debug_assert!(p as usize % 8 == 0);
-        &*(p as *const AtomicU64)
+        let p = unsafe { self.arena.ptr_at(node + OFF_VALUE) };
+        debug_assert!((p as usize).is_multiple_of(8));
+        unsafe { &*(p as *const AtomicU64) }
     }
 
     #[inline]
     unsafe fn tower(&self, node: u32, level: usize) -> &AtomicU32 {
-        let p = self.arena.ptr_at(node + OFF_TOWER + (level as u32) * 4);
-        debug_assert!(p as usize % 4 == 0);
-        &*(p as *const AtomicU32)
+        let p = unsafe { self.arena.ptr_at(node + OFF_TOWER + (level as u32) * 4) };
+        debug_assert!((p as usize).is_multiple_of(4));
+        unsafe { &*(p as *const AtomicU32) }
     }
 
     #[inline]
     unsafe fn key_of(&self, node: u32) -> &[u8] {
-        let off = (self.arena.ptr_at(node + OFF_KEY_OFF) as *const u32).read();
-        let len = (self.arena.ptr_at(node + OFF_KEY_LEN) as *const u32).read();
-        self.arena.slice(off, len)
+        let off = unsafe { (self.arena.ptr_at(node + OFF_KEY_OFF) as *const u32).read() };
+        let len = unsafe { (self.arena.ptr_at(node + OFF_KEY_LEN) as *const u32).read() };
+        unsafe { self.arena.slice(off, len) }
     }
 
     /// Order a node against a target key,version
     /// versions descend with the key
     #[inline]
     unsafe fn cmp_node(&self, node: u32, key: &[u8], version: u64) -> CmpOrdering {
-        self.key_of(node)
+        unsafe { self.key_of(node) }
             .cmp(key)
-            .then_with(|| version.cmp(&self.version_of(node)))
+            .then_with(|| version.cmp(&unsafe { self.version_of(node) }))
     }
 
     #[inline]
@@ -131,11 +133,11 @@ impl SkipList {
     ) -> (u32, u32) {
         let mut prev = start;
         loop {
-            let next = self.tower(prev, level).load(Ordering::Acquire);
+            let next = unsafe { self.tower(prev, level) }.load(Ordering::Acquire);
             if next == NULL {
                 return (prev, NULL);
             }
-            match self.cmp_node(next, key, version) {
+            match unsafe { self.cmp_node(next, key, version) } {
                 CmpOrdering::Less => prev = next,
                 _ => return (prev, next),
             }
@@ -170,7 +172,7 @@ impl SkipList {
     }
 
     fn put(&self, version: u64, key: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
-        if key.len() > u32::MAX as usize || value.map_or(false, |v| v.len() >= TOMBSTONE as usize) {
+        if key.len() > u32::MAX as usize || value.is_some_and(|v| v.len() >= TOMBSTONE as usize) {
             return Err(Error::TooLarge);
         }
         debug_assert!(version <= MAX_VERSION);
@@ -286,14 +288,14 @@ impl SkipList {
 
     #[inline]
     unsafe fn entry(&self, node: u32) -> Entry<'_> {
-        let (voff, vlen) = decode_value(self.value_cell(node).load(Ordering::Acquire));
+        let (voff, vlen) = decode_value(unsafe { self.value_cell(node) }.load(Ordering::Acquire));
         Entry {
-            key: self.key_of(node),
-            version: self.version_of(node),
+            key: unsafe { self.key_of(node) },
+            version: unsafe { self.version_of(node) },
             value: if vlen == TOMBSTONE {
                 None
             } else {
-                Some(self.arena.slice(voff, vlen))
+                Some(unsafe { self.arena.slice(voff, vlen) })
             },
         }
     }
@@ -735,7 +737,7 @@ mod tests {
         let l = list();
         for _ in 0..10_000 {
             let h = l.random_height();
-            assert!(h >= 1 && h <= MAX_HEIGHT, "height {} out of range", h);
+            assert!((1..=MAX_HEIGHT).contains(&h), "height {} out of range", h);
         }
     }
 
@@ -1078,7 +1080,7 @@ mod tests {
                     for i in 0..1_000u64 {
                         let k = key(rng.below(KEYS) as usize);
                         let v = i * THREADS as u64 + t + 1;
-                        if v % 5 == 0 {
+                        if v.is_multiple_of(5) {
                             l.remove(v, &k).unwrap();
                         } else {
                             l.insert(v, &k, format!("{}", v).as_bytes()).unwrap();
