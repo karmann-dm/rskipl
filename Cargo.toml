@@ -6,5 +6,7 @@ description = "Zero-dependency arena-backed lock-free MVCC skiplist implementati
 repository = "https://github.com/karmann-dm/rskipl"
 license = "MIT OR Apache-2.0"
 readme = "README.MD"
+keywords = ["skiplist", "lock-free", "mvcc", "memtable", "arena"]
+categories = ["data-structures", "concurrency", "database-implementations"]
 
 [dependencies]
