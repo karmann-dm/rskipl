@@ -41,7 +41,6 @@ impl From<ArenaFull> for Error {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub struct Entry<'a> {
     pub key: &'a [u8],
@@ -74,7 +73,6 @@ pub struct SkipList {
 unsafe impl Send for SkipList {}
 unsafe impl Sync for SkipList {}
 
-#[allow(dead_code)]
 impl SkipList {
     pub fn new(capacity: u32) -> Result<Self, Error> {
         let arena = Arena::new(capacity);
