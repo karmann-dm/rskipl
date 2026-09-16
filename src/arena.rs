@@ -26,6 +26,7 @@ unsafe impl Sync for Arena {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ArenaFull;
 
+#[allow(dead_code)]
 impl Arena {
     // the memtable needs dictate to have the cap limited, as we need
     // to flush it on the disk once it's full. Generally, we try to avoid growing a
@@ -39,8 +40,8 @@ impl Arena {
         assert!(!ptr.is_null(), "arena allocation failed");
 
         Self {
-            ptr: ptr,
-            layout: layout,
+            ptr,
+            layout,
             cap,
             len: AtomicU32::new(RESERVED),
         }
@@ -85,7 +86,7 @@ impl Arena {
     #[inline]
     pub unsafe fn ptr_at(&self, offset: u32) -> *mut u8 {
         debug_assert!(offset < self.cap);
-        self.ptr.add(offset as usize)
+        unsafe { self.ptr.add(offset as usize) }
     }
 
     #[inline]
@@ -93,7 +94,7 @@ impl Arena {
         if len == 0 {
             return &[];
         }
-        std::slice::from_raw_parts(self.ptr.add(offset as usize), len as usize)
+        unsafe { std::slice::from_raw_parts(self.ptr.add(offset as usize), len as usize) }
     }
 
     #[inline]
@@ -233,7 +234,7 @@ mod tests {
         let one = a.alloc(1, 1).unwrap();
         let eight = a.alloc(8, 8).unwrap();
         assert!(
-            eight >= one + 1,
+            eight > one,
             "aligned alloc at {} overlaps the byte at {}",
             eight,
             one
