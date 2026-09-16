@@ -5,5 +5,6 @@ edition = "2024"
 description = "Zero-dependency arena-backed lock-free MVCC skiplist implementation in Rust"
 repository = "https://github.com/karmann-dm/rskipl"
 license = "MIT OR Apache-2.0"
+readme = "README.MD"
 
 [dependencies]
