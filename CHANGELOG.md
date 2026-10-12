@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/karmann-dm/rskipl/compare/v0.1.3...v0.1.4) - 2026-10-12
+
+### Other
+
+- Fix typo in README description of skip list
+- Update README to include link for skiplist
+
 ## [0.1.3](https://github.com/karmann-dm/rskipl/compare/v0.1.2...v0.1.3) - 2026-09-16
 
 ### Other
