@@ -4,7 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/rskipl.svg)](https://crates.io/crates/rskipl)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-A lock-free, multi-version (MVCC) skiplist for Rust, built on a single pre-allocated memory arena. Zero dependencies.
+A lock-free, multi-version (MVCC) [skiplist](https://en.wikipedia.org/wiki/Skip_list) for Rust, built on a single pre-allocated memory arena. Zero dependencies.
 
 It is designed to be the **memtable** of an LSM-tree storage engine cause many threads write into it at once, readers look up keys "as of" a snapshot version, and once it fills up you freeze it, flush it to disk and throw the whole thing away.
 
